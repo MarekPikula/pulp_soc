@@ -159,6 +159,8 @@ module soc_peripherals #(
     APB_BUS s_stdout_bus ();
     APB_BUS s_apb_timer_bus ();
 
+    APB_BUS s_apb_wdt_bus ();
+
     localparam UDMA_EVENTS = 16*8;
 
     logic [31:0] s_gpio_sync;
@@ -263,7 +265,8 @@ module soc_peripherals #(
         .mmap_debug_master   ( apb_debug_master   ),
         .hwpe_master         ( apb_hwpe_master    ),
         .timer_master        ( s_apb_timer_bus    ),
-        .stdout_master       ( s_stdout_bus       )
+        .stdout_master       ( s_stdout_bus       ),
+	.wdt_master          ( s_apb_wdt_bus	  )
     );
 
     `ifdef SYNTHESIS
