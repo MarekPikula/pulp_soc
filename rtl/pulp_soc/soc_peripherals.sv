@@ -142,7 +142,10 @@ module soc_peripherals #(
     output logic                [63:0] cluster_boot_addr_o,
     output logic                       cluster_fetch_enable_o,
     output logic                       cluster_rstn_o,
-    output logic                       cluster_irq_o
+    output logic                       cluster_irq_o,
+
+    //wdt reset output:
+    output logic			wdt_reset_o
 );
 
 
@@ -605,4 +608,41 @@ module soc_peripherals #(
 
 `endif
 `endif
+
+
+    /////////////////////////////////////////////////////////////////
+    //  █████╗ ██████╗ ██████╗       ██╗    ██╗ ██████╗  ████████╗ //
+    // ██╔══██╗██╔══██╗██╔══██╗      ██║    ██║ ██╔══██╗ ╚══██╔══╝ //
+    // ███████║██████╔╝██████╔╝      ██║ █╗ ██║ ██║  ██║    ██║    //
+    // ██╔══██║██╔═══╝ ██╔══██╗      ██║███╗██║ ██║  ██║    ██║    //
+    // ██║  ██║██║     ██████╔╝      ╚███╔███╔╝ ██████╔╝    ██║    //
+    // ╚═╝  ╚═╝╚═╝     ╚═════╝        ╚══╝╚══╝  ╚═════╝     ╚═╝    //
+    ////////////////////////////////////////////////////////////////
+	logic resetwdt_out;
+
+	wdt
+	wdt_dut_i
+	(
+		.clk1_i		(clk_i				),
+		.clk2_i		(clk_i				),
+		.rst_ni		(rst_ni				),
+
+		.reset_wdt	(resetwdt_out			),
+
+		//apb
+		.HCLK		(clk_i				),
+		.HRESETn	(rst_ni				),
+		.PADDR		(s_apb_wdt_bus.paddr		),
+		.PWDATA		(s_apb_wdt_bus.pwdata		),
+		.PWRITE		(s_apb_wdt_bus.pwrite		),
+		.PSEL		(s_apb_wdt_bus.psel		),
+		.PENABLE	(s_apb_wdt_bus.penable		),
+
+		.PRDATA		(s_apb_wdt_bus.prdata		),
+		.PREADY		(s_apb_wdt_bus.pready		),
+		.PSLVERR	(s_apb_wdt_bus.pslverr		)
+	);
+
+	assign wdt_reset_o = resetwdt_out;
+
 endmodule
