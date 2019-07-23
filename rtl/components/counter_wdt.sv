@@ -1,4 +1,4 @@
-module counter
+module counter_wdt
 (
 	input logic clk_i,
 	input logic rst_ni,
