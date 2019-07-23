@@ -29,6 +29,8 @@ module fc_subsystem #(
     input  logic                      rst_ni,
     input  logic                      test_en_i,
 
+    input logic 		      wdt_reset_i,
+
     XBAR_TCDM_BUS.Master              l2_data_master,
     XBAR_TCDM_BUS.Master              l2_instr_master,
     XBAR_TCDM_BUS.Master              l2_hwpe_master [NB_HWPE_PORTS-1:0],
@@ -82,6 +84,8 @@ module fc_subsystem #(
     logic        core_data_we  ;
     logic [ 3:0]  core_data_be ;
     logic is_scm_instr_req, is_scm_data_req;
+
+    logic core_rst;
 
     assign perf_counters_int = 1'b0;
     assign fetch_en_int      = fetch_en_eu & fetch_en_i;
@@ -159,6 +163,8 @@ module fc_subsystem #(
     //********************************************************
     //************ RISCV CORE ********************************
     //********************************************************
+    assign core_rst = rst_ni  & ~wdt_reset_i;
+
     generate
     if ( USE_ZERORISCY == 0) begin: FC_CORE
     riscv_core #(
@@ -171,7 +177,7 @@ module fc_subsystem #(
         .SHARED_FP_DIVSQRT   ( 2                   )
     ) lFC_CORE (
         .clk_i                 ( clk_i             ),
-        .rst_ni                ( rst_ni            ),
+        .rst_ni                ( core_rst          ),
         .clock_en_i            ( core_clock_en     ),
         .test_en_i             ( test_en_i         ),
         .boot_addr_i           ( boot_addr_i       ),
@@ -231,7 +237,7 @@ module fc_subsystem #(
     //     .RV32M               ( ZERORISCY_RV32M     )
     // ) lFC_CORE (
     //     .clk_i                 ( clk_i             ),
-    //     .rst_ni                ( rst_ni            ),
+    //     .rst_ni                ( core_rst          ),
     //     .clock_en_i            ( core_clock_en     ),
     //     .test_en_i             ( test_en_i         ),
     //     .boot_addr_i           ( boot_addr_i       ),
