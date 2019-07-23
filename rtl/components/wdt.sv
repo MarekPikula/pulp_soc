@@ -54,7 +54,7 @@ module wdt
  
 
 	//counter:
-	counter 
+	counter_wdt 
 	counter_dut
 	(
 		.clk_i			(clk),
