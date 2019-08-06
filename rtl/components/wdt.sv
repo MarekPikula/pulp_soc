@@ -104,10 +104,15 @@ module wdt
 
 	always_ff @(posedge HCLK, negedge HRESETn)
 	begin
-		if (reg_config[`CLEAR_BIT])
+        if(~HRESETn) 
 		begin
-			reg_config[`CLEAR_BIT] <= 1'b0;
-		end
+            reg_config[`CLEAR_BIT] <= 1'b0;
+        end
+        else
+            if (reg_config[`CLEAR_BIT])
+            begin
+                reg_config[`CLEAR_BIT] <= 1'b0;
+            end
 	end
 
 	//write logic:
