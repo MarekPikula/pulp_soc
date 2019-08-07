@@ -66,23 +66,23 @@ module wdt
   counter_wdt 
   counter_dut
   (
-    .clk_i      (clk),
+    .clk_i           (clk),
 
-    .rst_ni      (reset),
+    .rst_ni          (reset),
     .init_value_i    (init_value),
-    .enable_i    (enable),
-    .clear_i    (clear),
-    .counter_value_o  (outv)
+    .enable_i        (enable),
+    .clear_i         (clear),
+    .counter_value_o (outv)
   );
 
   //overflow detect:
   ovf_detect 
   ovf_d_dut
   (
-    .clk_i     (clk  ),
-    .rst_ni    (reset  ),
-    .pres_counter_i (outv  ),
-    .ovfwdt_o  (out_ovf)
+    .clk_i           (clk  ),
+    .rst_ni          (reset  ),
+    .pres_counter_i  (outv  ),
+    .ovfwdt_o        (out_ovf)
   );  
 
 
@@ -96,16 +96,16 @@ module wdt
 
   assign s_apb_write = PSEL && PENABLE && PWRITE;
 
-  assign s_apb_addr = PADDR[3:0];
+  assign s_apb_addr  = PADDR[3:0];
 
   //reg counter 
   assign reg_counter = outv;
 
   //init value:
-  assign init_value = reg_init_value;
+  assign init_value  = reg_init_value;
 
-  assign enable     = reg_config[`ENABLE_BIT];
-  assign clear      = reg_config[`CLEAR_BIT];
+  assign enable      = reg_config[`ENABLE_BIT];
+  assign clear       = reg_config[`CLEAR_BIT];
 
   //todo:
 //  assign clk_select
@@ -122,12 +122,12 @@ module wdt
   //write logic:
   always_ff @(posedge HCLK, negedge HRESETn) begin
     if(~HRESETn) begin
-      reg_config    <= 32'b0; // <-- wdt disable, clear = 0; clk_select =0; scaler = 0;
-      reg_init_value   <= 32'hFFFF_FF00;
+      reg_config         <= 32'b0; // <-- wdt disable, clear = 0; clk_select =0; scaler = 0;
+      reg_init_value     <= 32'hFFFF_FF00;
     end else begin      
       if (s_apb_write) begin
         if (s_apb_addr == `CONFIG_WDT) begin
-          reg_config <= PWDATA;
+          reg_config     <= PWDATA;
         end else if (s_apb_addr == `INIT_VALUE) begin
           reg_init_value <= PWDATA;
         end
