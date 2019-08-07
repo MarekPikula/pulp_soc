@@ -64,21 +64,21 @@ module wdt
 
   //counter:
   counter_wdt i_counter_wdt (
-    .clk_i           (clk),
+    .clk_i           ( clk        ),
 
-    .rst_ni          (reset),
-    .init_value_i    (init_value),
-    .enable_i        (enable),
-    .clear_i         (clear),
-    .counter_value_o (outv)
+    .rst_ni          ( reset      ),
+    .init_value_i    ( init_value ),
+    .enable_i        ( enable     ),
+    .clear_i         ( clear      ),
+    .counter_value_o ( outv       )
   );
 
   //overflow detect:
   ovf_detect i_ovf_detect (
-    .clk_i           (clk  ),
-    .rst_ni          (reset  ),
-    .pres_counter_i  (outv  ),
-    .ovfwdt_o        (out_ovf)
+    .clk_i           ( clk        ),
+    .rst_ni          ( reset      ),
+    .pres_counter_i  ( outv       ),
+    .ovfwdt_o        ( out_ovf    )
   );  
 
 
