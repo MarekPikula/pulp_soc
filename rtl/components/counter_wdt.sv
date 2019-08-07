@@ -22,25 +22,19 @@ module counter_wdt
   logic [31:0] count;
   logic [31:0] count_mem;
 
-  always_ff@(posedge clk_i, negedge rst_ni)
-  begin
+  always_ff@(posedge clk_i, negedge rst_ni) begin
     if (~rst_ni)
       count_mem <= init_value_i;
     else
       count_mem <= count;
   end
 
-  always_comb
-  begin
+  always_comb begin
     count = count_mem;
-    if (clear_i)
-    begin
+    if (clear_i) begin
       count = init_value_i;
-    end
-    else
-    begin
-      if (enable_i)
-      begin
+    end else begin
+      if (enable_i) begin
         count = count_mem + 1;
       end
     end

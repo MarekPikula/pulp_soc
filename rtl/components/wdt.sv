@@ -111,38 +111,24 @@ module wdt
 //  assign clk_select
 //  assign scaler_bit
 
-  always_ff @(posedge HCLK, negedge HRESETn)
-  begin
-    if(~HRESETn) 
-    begin
+  always_ff @(posedge HCLK, negedge HRESETn) begin
+    if(~HRESETn) begin
       reg_config[`CLEAR_BIT] <= 1'b0;
-    end
-    else
-    if (reg_config[`CLEAR_BIT])
-    begin
+    end else if (reg_config[`CLEAR_BIT]) begin
       reg_config[`CLEAR_BIT] <= 1'b0;
     end
   end
 
   //write logic:
-  always_ff @(posedge HCLK, negedge HRESETn)
-  begin
-    if(~HRESETn) 
-    begin
+  always_ff @(posedge HCLK, negedge HRESETn) begin
+    if(~HRESETn) begin
       reg_config    <= 32'b0; // <-- wdt disable, clear = 0; clk_select =0; scaler = 0;
       reg_init_value   <= 32'hFFFF_FF00;
-    end
-    else
-    begin
-      
-      if (s_apb_write)
-      begin
-        if (s_apb_addr == `CONFIG_WDT)
-        begin
+    end else begin      
+      if (s_apb_write) begin
+        if (s_apb_addr == `CONFIG_WDT) begin
           reg_config <= PWDATA;
-        end
-        else if (s_apb_addr == `INIT_VALUE)
-        begin
+        end else if (s_apb_addr == `INIT_VALUE) begin
           reg_init_value <= PWDATA;
         end
       end
@@ -150,18 +136,13 @@ module wdt
   end
 
   //read logic
-  always_comb
-  begin
+  always_comb begin
     PRDATA = '0;
     case (s_apb_addr)
-      `CONFIG_WDT:
-        PRDATA = reg_config;
-      `INIT_VALUE:
-        PRDATA = reg_init_value;
-      `COUNTER_VALUE:
-        PRDATA = reg_counter;
-      default:
-        PRDATA = 32'b0;
+      `CONFIG_WDT   : PRDATA = reg_config;
+      `INIT_VALUE   : PRDATA = reg_init_value;
+      `COUNTER_VALUE: PRDATA = reg_counter;
+      default       : PRDATA = 32'b0;
     endcase
   end
 
