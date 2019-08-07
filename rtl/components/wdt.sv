@@ -63,9 +63,7 @@ module wdt
  
 
   //counter:
-  counter_wdt 
-  counter_dut
-  (
+  counter_wdt i_counter_wdt (
     .clk_i           (clk),
 
     .rst_ni          (reset),
@@ -76,9 +74,7 @@ module wdt
   );
 
   //overflow detect:
-  ovf_detect 
-  ovf_d_dut
-  (
+  ovf_detect i_ovf_detect (
     .clk_i           (clk  ),
     .rst_ni          (reset  ),
     .pres_counter_i  (outv  ),
