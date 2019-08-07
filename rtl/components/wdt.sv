@@ -1,18 +1,27 @@
+// Copyright 2019 ETH Zurich and University of Bologna.
+// Copyright and related rights are licensed under the Solderpad Hardware
+// License, Version 0.51 (the "License"); you may not use this file except in
+// compliance with the License.  You may obtain a copy of the License at
+// http://solderpad.org/licenses/SHL-0.51. Unless required by applicable law
+// or agreed to in writing, software, hardware and materials distributed under
+// this License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+// specific language governing permissions and limitations under the License.
 
 
-`define CONFIG_WDT      4'h0
-`define INIT_VALUE      4'h4
-`define COUNTER_VALUE   4'h8
+`define CONFIG_WDT         4'h0
+`define INIT_VALUE         4'h4
+`define COUNTER_VALUE      4'h8
 
-`define ENABLE_BIT      'd0
-`define CLEAR_BIT       'd1
-`define CLK_SELECT_BIT  'd2
-`define SCALER_BIT      'd3
+`define ENABLE_BIT         'd0
+`define CLEAR_BIT          'd1
+`define CLK_SELECT_BIT     'd2
+`define SCALER_BIT         'd3
 
 
 module wdt
 #(
-  parameter APB_ADDR_WIDTH =12
+  parameter APB_ADDR_WIDTH = 12
 )
 (
   input logic clk1_i,
@@ -32,7 +41,9 @@ module wdt
   output logic               [31:0] PRDATA,
   output logic                      PREADY,
   output logic                      PSLVERR
+
 );
+
 
   logic clk;
   logic reset;
@@ -49,12 +60,12 @@ module wdt
 
   //SCALER: TODO
   //
+ 
 
   //counter:
-  counter_wdt 
-  counter_dut
-  (
+  counter_wdt i_counter_wdt (
     .clk_i           ( clk        ),
+
     .rst_ni          ( reset      ),
     .init_value_i    ( init_value ),
     .enable_i        ( enable     ),
@@ -63,14 +74,12 @@ module wdt
   );
 
   //overflow detect:
-  ovf_detect 
-  ovf_d_dut
-  (
-    .clk_i          ( clk     ),
-    .rst_ni		    ( reset   ),
-    .pres_counter_i ( outv    ),
-    .ovfwdt_o	    ( out_ovf )
-  );	
+  ovf_detect i_ovf_detect (
+    .clk_i           ( clk        ),
+    .rst_ni          ( reset      ),
+    .pres_counter_i  ( outv       ),
+    .ovfwdt_o        ( out_ovf    )
+  );  
 
 
   assign reset_wdt = out_ovf;
@@ -83,52 +92,39 @@ module wdt
 
   assign s_apb_write = PSEL && PENABLE && PWRITE;
 
-  assign s_apb_addr = PADDR[3:0];
+  assign s_apb_addr  = PADDR[3:0];
 
   //reg counter 
   assign reg_counter = outv;
 
   //init value:
-  assign init_value = reg_init_value;
+  assign init_value  = reg_init_value;
 
-  assign enable = reg_config[`ENABLE_BIT];
-  assign clear  = reg_config[`CLEAR_BIT];
+  assign enable      = reg_config[`ENABLE_BIT];
+  assign clear       = reg_config[`CLEAR_BIT];
 
-  // todo:
-  // assign clk_select
-  // assign scaler_bit
+  //todo:
+//  assign clk_select
+//  assign scaler_bit
 
-  always_ff @(posedge HCLK, negedge HRESETn)
-  begin
-    if(~HRESETn)
-    begin
+  always_ff @(posedge HCLK, negedge HRESETn) begin
+    if(~HRESETn) begin
+      reg_config[`CLEAR_BIT] <= 1'b0;
+    end else if (reg_config[`CLEAR_BIT]) begin
       reg_config[`CLEAR_BIT] <= 1'b0;
     end
-    else
-      if (reg_config[`CLEAR_BIT])
-      begin
-        reg_config[`CLEAR_BIT] <= 1'b0;
-      end
   end
 
   //write logic:
-  always_ff @(posedge HCLK, negedge HRESETn)
-  begin
-    if(~HRESETn) 
-    begin
-      reg_config       <= 32'b0; // <-- wdt disable, clear = 0; clk_select =0; scaler = 0;
-      reg_init_value   <= 32'hFFFF_FF00;
-    end
-    else
-    begin
-      if (s_apb_write)
-      begin
-        if (s_apb_addr == `CONFIG_WDT)
-        begin
-          reg_config <= PWDATA;
-        end
-        else if (s_apb_addr == `INIT_VALUE)
-        begin
+  always_ff @(posedge HCLK, negedge HRESETn) begin
+    if(~HRESETn) begin
+      reg_config         <= 32'b0; // <-- wdt disable, clear = 0; clk_select =0; scaler = 0;
+      reg_init_value     <= 32'hFFFF_FF00;
+    end else begin      
+      if (s_apb_write) begin
+        if (s_apb_addr == `CONFIG_WDT) begin
+          reg_config     <= PWDATA;
+        end else if (s_apb_addr == `INIT_VALUE) begin
           reg_init_value <= PWDATA;
         end
       end
@@ -136,18 +132,13 @@ module wdt
   end
 
   //read logic
-  always_comb
-  begin
+  always_comb begin
     PRDATA = '0;
     case (s_apb_addr)
-      `CONFIG_WDT:
-        PRDATA = reg_config;
-      `INIT_VALUE:
-        PRDATA = reg_init_value;
-      `COUNTER_VALUE:
-        PRDATA = reg_counter;
-      default:
-        PRDATA = 32'b0;
+      `CONFIG_WDT   : PRDATA = reg_config;
+      `INIT_VALUE   : PRDATA = reg_init_value;
+      `COUNTER_VALUE: PRDATA = reg_counter;
+      default       : PRDATA = 32'b0;
     endcase
   end
 
