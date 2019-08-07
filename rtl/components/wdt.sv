@@ -119,7 +119,7 @@ module wdt
   always_ff @(posedge HCLK, negedge HRESETn) begin
     if(~HRESETn) begin
       reg_config         <= 32'b0; // <-- wdt disable, clear = 0; clk_select =0; scaler = 0;
-      reg_init_value     <= 32'hFFFF_FF00;
+      reg_init_value     <= 32'h0000_0001;
     end else begin      
       if (s_apb_write) begin
         if (s_apb_addr == `CONFIG_WDT) begin
