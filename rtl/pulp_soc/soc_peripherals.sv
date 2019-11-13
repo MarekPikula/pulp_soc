@@ -381,6 +381,7 @@ module soc_peripherals #(
     //  ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝    ╚══════╝ ╚═════╝ ╚═════╝ ╚══════╝   ╚═╝   ╚══════╝ //
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
+    /* WARNING cut uDMA
     udma_subsystem #(
         .APB_ADDR_WIDTH     ( APB_ADDR_WIDTH       ),
         .L2_ADDR_WIDTH      ( MEM_ADDR_WIDTH       ),
@@ -467,6 +468,7 @@ module soc_peripherals #(
         .i2c_sda_oe       ( i2c_sda_oe_o         )
 
     );
+    */
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //  █████╗ ██████╗ ██████╗     ███████╗ ██████╗  ██████╗     ██████╗████████╗██████╗ ██╗      //
@@ -515,6 +517,7 @@ module soc_peripherals #(
         .cluster_irq_o            ( cluster_irq_o          )
     );
 
+    /* WARNING removed advanced timer
     apb_adv_timer #(
         .APB_ADDR_WIDTH ( APB_ADDR_WIDTH ),
         .EXTSIG_NUM     ( 32             )
@@ -543,6 +546,7 @@ module soc_peripherals #(
         .ch_2_o          ( timer_ch2_o             ),
         .ch_3_o          ( timer_ch3_o             )
     );
+    */
 
     /////////////////////////////////////////////////////////////////////////////////
     // ███████╗██╗   ██╗███████╗███╗   ██╗████████╗     ██████╗ ███████╗███╗   ██╗ //

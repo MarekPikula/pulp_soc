@@ -26,8 +26,16 @@ module fc_subsystem #(
 )
 (
     input  logic                      clk_i,
+    input  logic                      slow_clk_i,
     input  logic                      rst_ni,
     input  logic                      test_en_i,
+
+    input   logic                     trst_n,
+    input   logic                     tck,
+    input   logic                     tms,
+    input   logic                     tdi,
+    output  logic                     tdo,
+    output  logic                     tdo_en,
 
     XBAR_TCDM_BUS.Master              l2_data_master,
     XBAR_TCDM_BUS.Master              l2_instr_master,
@@ -52,9 +60,10 @@ module fc_subsystem #(
     output logic                      supervisor_mode_o
 );
 
-    localparam USE_IBEX   = CORE_TYPE == 1 || CORE_TYPE == 2;
-    localparam IBEX_RV32M = CORE_TYPE == 1;
-    localparam IBEX_RV32E = CORE_TYPE == 2;
+    localparam USE_IBEX   = CORE_TYPE == 1 || CORE_TYPE == 2 || CORE_TYPE == 3;
+    localparam IBEX_RV32M = CORE_TYPE == 1 || CORE_TYPE == 3;
+    localparam IBEX_RV32E = CORE_TYPE == 2 || CORE_TYPE == 3;
+    localparam USE_SCR1   = CORE_TYPE == 4;
 
     // Interrupt signals
     logic        core_irq_req   ;
@@ -171,7 +180,7 @@ module fc_subsystem #(
     //************ RISCV CORE ********************************
     //********************************************************
     generate
-    if ( USE_IBEX == 0) begin: FC_CORE
+    if ( USE_IBEX == 0 && USE_SCR1 == 0 ) begin : FC_CORE
     assign boot_addr = boot_addr_i;
     riscv_core #(
         .N_EXT_PERF_COUNTERS ( N_EXT_PERF_COUNTERS ),
@@ -236,7 +245,7 @@ module fc_subsystem #(
         .ext_perf_counters_i   ( perf_counters_int ),
         .fregfile_disable_i    ( 1'b0              ) // try me!
     );
-    end else begin: FC_CORE
+    end else if ( USE_IBEX == 1 && USE_SCR1 == 0 ) begin: FC_CORE
     assign boot_addr = boot_addr_i & 32'hFFFFFF00; // RI5CY expects 0x80 offset, Ibex expects 0x00 offset (adds reset offset 0x80 internally)
 `ifdef VERILATOR
     ibex_core #(
@@ -294,13 +303,62 @@ module fc_subsystem #(
         .fetch_enable_i        ( fetch_en_int      ),
         .core_sleep_o          (                   )
     );
+    end else if ( USE_IBEX == 0 && USE_SCR1 == 1 ) begin: FC_CORE
+    scr1_top_pulp lFC_CORE (
+        .clk                   ( clk_i             ),
+        .pwrup_rst_n           ( rst_ni            ),
+        .rst_n                 ( rst_ni            ),
+        .cpu_rst_n             ( rst_ni            ),
+
+        .test_mode             ( test_en_i         ),
+        .test_rst_n            ( rst_ni            ),
+
+        .rtc_clk               ( slow_clk_i        ),
+
+        .fuse_mhartid          ( hart_id           ),
+        .fuse_idcode           ( `DMI_JTAG_IDCODE  ),
+
+        .soft_irq              ( 1'b0              ),
+        .irq_lines             ( {1'b0, core_irq_fast} ),
+
+        .irq_ack               ( ),//core_irq_ack      ),
+        .irq_ack_id            ( ),//irq_ack_id        ),
+
+        .trst_n                ( trst_n            ),
+        .tck                   ( tck               ),
+        .tms                   ( tms               ),
+        .tdi                   ( tdi               ),
+        .tdo                   ( tdo               ),
+        .tdo_en                ( tdo_en            ),
+
+        // Instruction Memory Interface:  Interface to Instruction Logaritmic interconnect: Req->grant handshake
+        .instr_addr_o          ( core_instr_addr   ),
+        .instr_req_o           ( core_instr_req    ),
+        .instr_rdata_i         ( core_instr_rdata  ),
+        .instr_gnt_i           ( core_instr_gnt    ),
+        .instr_rvalid_i        ( core_instr_rvalid ),
+        .instr_err_i           ( core_instr_err    ),
+
+        // Data memory interface:
+        .data_addr_o           ( core_data_addr    ),
+        .data_req_o            ( core_data_req     ),
+        .data_be_o             ( core_data_be      ),
+        .data_rdata_i          ( core_data_rdata   ),
+        .data_we_o             ( core_data_we      ),
+        .data_gnt_i            ( core_data_gnt     ),
+        .data_wdata_o          ( core_data_wdata   ),
+        .data_rvalid_i         ( core_data_rvalid  ),
+        .data_err_i            ( core_data_err     )
+
+        //.fetch_enable_i        ( fetch_en_int      ),
+    );
     end
     endgenerate
 
     assign supervisor_mode_o = 1'b1;
 
     generate
-    if ( USE_IBEX == 1) begin : convert_irqs
+    if ( USE_IBEX == 1 || USE_SCR1 == 1) begin : convert_irqs
     // Ibex supports 15 fast interrupts and reads the interrupt lines directly
     // Convert ID back to interrupt lines
     always_comb begin : gen_core_irq_fast
@@ -365,7 +423,8 @@ module fc_subsystem #(
         assign apb_slave_hwpe.prdata  = '0;
         assign apb_slave_hwpe.pready  = '0;
         assign apb_slave_hwpe.pslverr = '0;
-        for(genvar ii=0; ii<NB_HWPE_PORTS; ii++) begin
+        genvar ii;
+        for(ii=0; ii<NB_HWPE_PORTS; ii++) begin : HWPE_MASTER_GEN
             assign l2_hwpe_master[ii].req   = '0;
             assign l2_hwpe_master[ii].wen   = '0;
             assign l2_hwpe_master[ii].wdata = '0;
