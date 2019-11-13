@@ -218,6 +218,8 @@ module pulp_soc
     output logic                    [3:0] sdio_data_o,
     input  logic                    [3:0] sdio_data_i,
     output logic                    [3:0] sdio_data_oen_o,
+    output logic                          can_tx_o,
+    input  logic                          can_rx_i,
 
     ///////////////////////////////////////////////////
     ///////////////////////////////////////////////////
@@ -240,7 +242,7 @@ module pulp_soc
     localparam L2_BANK_SIZE_PRI      = 8192;             // in 32-bit words
     localparam L2_MEM_ADDR_WIDTH_PRI = $clog2(L2_BANK_SIZE_PRI * NB_L2_BANKS_PRI) - $clog2(NB_L2_BANKS_PRI);
     localparam ROM_ADDR_WIDTH        = 13;
-    localparam FC_Core_CLUSTER_ID    = 6'd31;
+    localparam FC_Core_CLUSTER_ID    = 6'd0;
     localparam FC_Core_CORE_ID       = 4'd0;
     localparam FC_Core_MHARTID       = {FC_Core_CLUSTER_ID,1'b0,FC_Core_CORE_ID};
 
@@ -256,7 +258,7 @@ module pulp_soc
         will remove the other flip flops and related logic.
     */
 
-    localparam NrHarts                               = 1024;
+    localparam NrHarts                               = 1;
     localparam logic [NrHarts-1:0] SELECTABLE_HARTS  = 1 << FC_Core_MHARTID;
     localparam dm::hartinfo_t RI5CY_HARTINFO = '{
                                                 zero1:        '0,
@@ -619,6 +621,10 @@ module pulp_soc
         .sddata_i               ( sdio_data_i            ),
         .sddata_oen_o           ( sdio_data_oen_o        ),
 
+        //CAN
+        .can_tx                 ( can_tx_o               ),
+        .can_rx                 ( can_rx_i               ),
+
         .timer_ch0_o            ( timer_ch0_o            ),
         .timer_ch1_o            ( timer_ch1_o            ),
         .timer_ch2_o            ( timer_ch2_o            ),
@@ -785,7 +791,7 @@ module pulp_soc
         .lint_fc_instr    ( s_lint_fc_instr_bus ),
         .lint_udma_tx     ( s_lint_udma_tx_bus  ),
         .lint_udma_rx     ( s_lint_udma_rx_bus  ),
-        .lint_debug       ( s_lint_debug_bus    ),
+        .lint_debug       ( s_lint_riscv_jtag_bus ), //s_lint_debug_bus    ),
         .lint_hwpe        ( s_lint_hwpe_bus     ),
 
         .axi_from_cluster ( s_data_in_bus       ),
@@ -868,6 +874,8 @@ module pulp_soc
     );
     assign s_lint_riscv_jtag_bus.wen = ~lint_riscv_jtag_bus_master_we;
 
+	 assign jtag_tdo_o = int_td;
+    /*
     jtag_tap_top jtag_tap_top_i
     (
         .tck_i                    ( jtag_tck_i         ),
@@ -914,6 +922,7 @@ module pulp_soc
         .tcdm_bus_0_i(s_lint_pulp_jtag_bus),
         .tcdm_bus_o(s_lint_debug_bus)
     );
+    */
 
     apb2per #(
         .PER_ADDR_WIDTH ( 32  ),
@@ -955,6 +964,7 @@ module pulp_soc
     //*** PAD AND GPIO CONFIGURATION SIGNALS PACK ************
     //********************************************************
 
+    /*
     generate
         for (i=0; i<32; i++) begin : GEN_GPIO_CFG_I
             for (j=0; j<6; j++) begin : GEN_GPIO_CFG_J
@@ -978,6 +988,7 @@ module pulp_soc
             end
         end
     endgenerate
+    */
 
     //********************************************************
     //*** AXI DATA SLAVE INTERFACE UNPACK ********************

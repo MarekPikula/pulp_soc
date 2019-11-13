@@ -210,7 +210,7 @@ module soc_clk_rst_gen (
                         );
 
     assign s_clk_soc     = s_clk_fll_soc;
-    assign s_clk_cluster = s_clk_fll_cluster;
+    //assign s_clk_cluster = s_clk_fll_cluster;
     assign s_clk_per     = s_clk_fll_per;
 
     `endif
@@ -246,7 +246,7 @@ module soc_clk_rst_gen (
             .init_no     (                     )                    //not used
         );
     `else
-        assign s_rstn_soc_sync = s_rstn_soc;
+        assign s_rstn_cluster_sync = s_rstn_soc;
     `endif
 
     assign clk_soc_o       = s_clk_soc;

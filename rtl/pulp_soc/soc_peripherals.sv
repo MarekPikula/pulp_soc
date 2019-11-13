@@ -130,6 +130,10 @@ module soc_peripherals #(
     input  logic                 [3:0] sddata_i,
     output logic                 [3:0] sddata_oen_o,
 
+    //CAN
+    output logic                       can_tx,
+    input  logic                       can_rx,
+
 
     output logic [EVNT_WIDTH-1:0]      cl_event_data_o,
     output logic                       cl_event_valid_o,
@@ -157,6 +161,7 @@ module soc_peripherals #(
     APB_BUS s_soc_evnt_gen_bus ();
     APB_BUS s_stdout_bus ();
     APB_BUS s_apb_timer_bus ();
+    APB_BUS s_apb_can_bus ();
 
     localparam UDMA_EVENTS = 16*8;
 
@@ -169,6 +174,7 @@ module soc_peripherals #(
     logic       s_i2c_event       ;
     logic       s_i2s_event       ;
     logic       s_i2s_cam_event   ;
+    logic       s_can_event       ;
 
     logic [3:0] s_adv_timer_events;
     logic [1:0] s_fc_hp_events;
@@ -226,22 +232,29 @@ module soc_peripherals #(
     assign fc_events_o[30]  = s_fc_hp_events[0];
     assign fc_events_o[31]  = s_fc_hp_events[1];
     end else begin : FC_EVENTS
-    assign fc_events_o[0]     = s_timer_lo_event;
-    assign fc_events_o[1]     = s_timer_hi_event;
-    assign fc_events_o[2]     = s_ref_rise_event | s_ref_fall_event;
-    assign fc_events_o[3]     = s_gpio_event;
-    assign fc_events_o[4]     = s_adv_timer_events[0];
-    assign fc_events_o[5]     = s_adv_timer_events[1];
-    assign fc_events_o[6]     = s_adv_timer_events[2];
-    assign fc_events_o[7]     = s_adv_timer_events[3];
-    assign fc_events_o[8]     = 1'b0; // not used
-    assign fc_events_o[9]     = 1'b0; // not used
-    assign fc_events_o[10]    = 1'b0; //RESERVED for soc event FIFO
-    assign fc_events_o[11]    = s_fc_err_events;
-    assign fc_events_o[12]    = s_fc_hp_events[0];
-    assign fc_events_o[13]    = s_fc_hp_events[1];
-    assign fc_events_o[14]    = 1'b0; // not used
-    assign fc_events_o[31:15] = 17'b0; // not supported by Ibex
+    assign fc_events_o[2:0]   = 3'b0; // invalid for Ibex
+    assign fc_events_o[3]     = 1'b0; // software interrupt
+    assign fc_events_o[6:4]   = 3'b0; // invalid for Ibex
+    assign fc_events_o[7]     = 1'b0; // timer interrupt
+    assign fc_events_o[10:8]  = 3'b0; // invalid for Ibex
+    assign fc_events_o[11]    = 1'b0; // external interrupt
+    assign fc_events_o[15:12] = 3'b0; // invalid for Ibex
+    assign fc_events_o[16]    = s_timer_lo_event;
+    assign fc_events_o[17]    = s_timer_hi_event;
+    assign fc_events_o[18]    = s_ref_rise_event | s_ref_fall_event;
+    assign fc_events_o[19]    = s_gpio_event;
+    assign fc_events_o[20]    = s_adv_timer_events[0];
+    assign fc_events_o[21]    = s_adv_timer_events[1];
+    assign fc_events_o[22]    = s_adv_timer_events[2];
+    assign fc_events_o[23]    = s_adv_timer_events[3];
+    assign fc_events_o[24]    = s_can_event; // normally not used
+    assign fc_events_o[25]    = 1'b0; // not used
+    assign fc_events_o[26]    = 1'b0; // RESERVED for soc event FIFO
+    assign fc_events_o[27]    = s_fc_err_events;
+    assign fc_events_o[28]    = s_fc_hp_events[0];
+    assign fc_events_o[29]    = s_fc_hp_events[1];
+    assign fc_events_o[30]    = 1'b0; // not used
+    assign fc_events_o[31]    = 1'b0; // NMI
     end
     endgenerate
 
@@ -283,7 +296,8 @@ module soc_peripherals #(
         .mmap_debug_master   ( apb_debug_master   ),
         .hwpe_master         ( apb_hwpe_master    ),
         .timer_master        ( s_apb_timer_bus    ),
-        .stdout_master       ( s_stdout_bus       )
+        .stdout_master       ( s_stdout_bus       ),
+        .can_master          ( s_apb_can_bus      )
     );
 
     `ifdef SYNTHESIS
@@ -381,6 +395,7 @@ module soc_peripherals #(
     //  ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝    ╚══════╝ ╚═════╝ ╚═════╝ ╚══════╝   ╚═╝   ╚══════╝ //
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
+    /* WARNING cut uDMA
     udma_subsystem #(
         .APB_ADDR_WIDTH     ( APB_ADDR_WIDTH       ),
         .L2_ADDR_WIDTH      ( MEM_ADDR_WIDTH       ),
@@ -467,6 +482,7 @@ module soc_peripherals #(
         .i2c_sda_oe       ( i2c_sda_oe_o         )
 
     );
+    */
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //  █████╗ ██████╗ ██████╗     ███████╗ ██████╗  ██████╗     ██████╗████████╗██████╗ ██╗      //
@@ -515,6 +531,7 @@ module soc_peripherals #(
         .cluster_irq_o            ( cluster_irq_o          )
     );
 
+    /* WARNING removed advanced timer
     apb_adv_timer #(
         .APB_ADDR_WIDTH ( APB_ADDR_WIDTH ),
         .EXTSIG_NUM     ( 32             )
@@ -543,6 +560,7 @@ module soc_peripherals #(
         .ch_2_o          ( timer_ch2_o             ),
         .ch_3_o          ( timer_ch3_o             )
     );
+    */
 
     /////////////////////////////////////////////////////////////////////////////////
     // ███████╗██╗   ██╗███████╗███╗   ██╗████████╗     ██████╗ ███████╗███╗   ██╗ //
@@ -553,6 +571,7 @@ module soc_peripherals #(
     // ╚══════╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝   ╚═╝        ╚═════╝ ╚══════╝╚═╝  ╚═══╝ //
     /////////////////////////////////////////////////////////////////////////////////
 
+    ///* WARNING: cannot be cut for current SDK configuration
     soc_event_generator #(
         .APB_ADDR_WIDTH ( APB_ADDR_WIDTH ),
         .APB_EVNT_NUM   ( 8              ),
@@ -608,6 +627,45 @@ module soc_peripherals #(
         .irq_lo_o   ( s_timer_lo_event        ),
         .irq_hi_o   ( s_timer_hi_event        ),
         .busy_o     (                         )
+    );
+
+    logic [63:0] s_can_timestamp;
+
+    always @(posedge clk_i, negedge rst_ni) begin
+        if(~rst_ni) begin
+            s_can_timestamp <= 'h0;
+        end else begin
+            s_can_timestamp <= s_can_timestamp + 1;
+        end
+    end
+
+    // CTU CAN
+    CTU_CAN_FD_v1_0 #(
+        .rx_buffer_size ( 128                   )//,
+        //.sup_filtA      ( 1                     ),  // Quartus doesn't really want to work with booleans for VHDL module instantiation
+        //.sup_filtB      ( 1                     ),
+        //.sup_filtC      ( 1                     ),
+        //.sup_range      ( 1                     )
+    ) i_CTU_CAN_FD_v1_0 (
+        .aclk           ( clk_i                 ),
+        .arst           ( ~rst_ni               ),
+
+        .irq            ( s_can_event           ),
+        .CAN_tx         ( can_tx                ),
+        .CAN_rx         ( can_rx                ),
+        .timestamp      ( s_can_timestamp       ),
+
+        // Ports of APB4
+        .s_apb_paddr    ( {16'h1A31, s_apb_can_bus.paddr[15:0]} ),  // so that device ID matches with the one that is required by core
+        .s_apb_penable  ( s_apb_can_bus.penable ),
+        .s_apb_pprot    ( 3'b0                  ),  // ignored in apb_ifc.vhd
+        .s_apb_prdata   ( s_apb_can_bus.prdata  ),
+        .s_apb_pready   ( s_apb_can_bus.pready  ),
+        .s_apb_psel     ( s_apb_can_bus.psel    ),
+        .s_apb_pslverr  ( s_apb_can_bus.pslverr ),
+        .s_apb_pstrb    ( 4'hF                  ),  // no pstrb in PULP APB definition, pwrite differentiation done inside apb_ifc.vhd
+        .s_apb_pwdata   ( s_apb_can_bus.pwdata  ),
+        .s_apb_pwrite   ( s_apb_can_bus.pwrite  )
     );
 
 `ifdef PULP_TRAINING
